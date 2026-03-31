@@ -18,16 +18,13 @@ export default function Home() {
   }
 
   return (
-    <div className="scene">
-      <div className="scene-bg" />
-      <div className="phone-wrapper">
-        <div className="phone">
-          <SplashScreen active={screen === 'splash'} onOpen={() => goTo('biometric')} />
-          <BiometricOverlay active={screen === 'biometric'} onSuccess={() => goTo('home')} onCancel={() => goTo('splash')} />
-          <HomeScreen active={screen === 'home'} sessionStart={sessionStart.current} onLock={() => goTo('splash')} onOpenFindMy={() => goTo('webview')} onTestBlocked={() => goTo('blocked')} />
-          <WebviewScreen active={screen === 'webview'} selectedDevice={selectedDevice} onSelectDevice={setSelectedDevice} onBack={() => goTo('home')} onLock={() => goTo('splash')} />
-          <BlockedOverlay active={screen === 'blocked'} onHome={() => goTo('home')} onBack={() => goTo('webview')} />
-        </div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-950)' }}>
+      <div style={{ position: 'relative', width: 390, height: 844, borderRadius: 54, background: '#111218', border: '1.5px solid rgba(255,255,255,0.12)', boxShadow: '0 40px 80px rgba(0,0,0,0.8)', overflow: 'hidden' }}>
+        <SplashScreen active={screen === 'splash'} onOpen={() => goTo('biometric')} />
+        <BiometricOverlay active={screen === 'biometric'} onSuccess={() => goTo('home')} onCancel={() => goTo('splash')} />
+        <HomeScreen active={screen === 'home'} sessionStart={sessionStart.current} onLock={() => goTo('splash')} onOpenFindMy={() => goTo('webview')} onTestBlocked={() => goTo('blocked')} />
+        <WebviewScreen active={screen === 'webview'} selectedDevice={selectedDevice} onSelectDevice={setSelectedDevice} onBack={() => goTo('home')} onLock={() => goTo('splash')} />
+        <BlockedOverlay active={screen === 'blocked'} onHome={() => goTo('home')} onBack={() => goTo('webview')} />
       </div>
     </div>
   )
