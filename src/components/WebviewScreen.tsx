@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 
 interface Props {
   active: boolean
@@ -8,13 +8,19 @@ interface Props {
 
 const FIND_MY_URL = 'https://www.icloud.com/find'
 
+// Detect if running in Capacitor native app
+const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform()
+
 export default function WebviewScreen({ active, onBack, onLock }: Props) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [loading, setLoading] = useState(true)
-  const [currentUrl, setCurrentUrl] = useState(FIND_MY_URL)
 
   useEffect(() => {
-    if (active) { setLoading(true); setCurrentUrl(FIND_MY_URL) }
+    if (!active) return
+    if (isNative) {
+      // On device: open in native browser via Capacitor Browser plugin
+      import('@capacitor/browser').then(({ Browser }) => {
+        Browser.open({ url: FIND_MY_URL, presentationStyle: 'fullscreen' })
+      })
+    }
   }, [active])
 
   if (!active) return null
@@ -24,15 +30,12 @@ export default function WebviewScreen({ active, onBack, onLock }: Props) {
       {/* Browser chrome */}
       <div style={{ background: 'rgba(16,22,40,0.98)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f57', cursor: 'pointer' }} onClick={onLock} title="Lock" />
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f57', cursor: 'pointer' }} onClick={onLock} />
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#febc2e' }} />
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#28c840' }} />
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
             <button onClick={onBack} style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(255,255,255,0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#94a3b8' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <button onClick={() => { setLoading(true); setCurrentUrl(FIND_MY_URL + '?t=' + Date.now()) }} style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(255,255,255,0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#94a3b8' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             </button>
           </div>
         </div>
@@ -47,27 +50,38 @@ export default function WebviewScreen({ active, onBack, onLock }: Props) {
       {/* Security banner */}
       <div style={{ background: 'rgba(34,197,94,0.08)', borderBottom: '1px solid rgba(34,197,94,0.12)', padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#4ade80', flexShrink: 0 }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Protected by Find My Apple · Sign in with your Apple ID
+        Protected by Find My Apple · Opening secure browser
       </div>
 
-      {/* Loading indicator */}
-      {loading && (
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, zIndex: 10 }}>
-          <div style={{ width: 40, height: 40, border: '3px solid rgba(59,130,246,0.2)', borderTop: '3px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>Loading Find My...</div>
+      {/* Main content — launching message */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, padding: 40 }}>
+        <div style={{ width: 80, height: 80, borderRadius: 24, background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 40px rgba(37,99,235,0.4)' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </div>
-      )}
-
-      {/* Real iCloud Find My WebView */}
-      <iframe
-        ref={iframeRef}
-        src={currentUrl}
-        style={{ flex: 1, border: 'none', width: '100%', opacity: loading ? 0 : 1, transition: 'opacity 0.3s' }}
-        onLoad={() => setLoading(false)}
-        onError={() => setLoading(false)}
-        allow="geolocation"
-        title="Find My"
-      />
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 8 }}>Opening Find My</div>
+          <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, maxWidth: 260 }}>
+            {isNative
+              ? 'Launching Apple iCloud in your secure browser. Sign in with your Apple ID to view your devices.'
+              : 'On your Android device, this will launch iCloud in the native browser. Sign in with your Apple ID to track your devices.'}
+          </div>
+        </div>
+        {isNative ? (
+          <button
+            onClick={() => import('@capacitor/browser').then(({ Browser }) => Browser.open({ url: FIND_MY_URL, presentationStyle: 'fullscreen' }))}
+            style={{ padding: '16px 32px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', border: 'none', borderRadius: 17, color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Open iCloud Find My
+          </button>
+        ) : (
+          <div style={{ padding: '12px 20px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12, fontSize: 12, color: '#60a5fa', fontWeight: 600, textAlign: 'center' }}>
+            Install APK on Android to use live tracking
+          </div>
+        )}
+        <button onClick={onBack} style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          ← Back to Home
+        </button>
+      </div>
     </div>
   )
 }
